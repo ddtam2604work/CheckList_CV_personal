@@ -144,8 +144,10 @@ export default function TaskModal({
       return;
     }
 
+    const isEditing = taskToEdit && !taskToEdit._isNew;
+
     const taskData = {
-      id: taskToEdit ? taskToEdit.id : 'task-' + Date.now(),
+      id: isEditing ? taskToEdit.id : 'task-' + Date.now(),
       title: title.trim(),
       description: description.trim(),
       category: category.trim(),
@@ -155,7 +157,7 @@ export default function TaskModal({
       endDate,
       subtasks,
       attachments,
-      createdAt: taskToEdit ? taskToEdit.createdAt : new Date().toISOString(),
+      createdAt: isEditing ? taskToEdit.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
@@ -174,7 +176,7 @@ export default function TaskModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              {taskToEdit ? 'Chỉnh sửa công việc' : 'Tạo công việc mới'}
+              {taskToEdit && !taskToEdit._isNew ? 'Chỉnh sửa công việc' : 'Tạo công việc mới'}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Thiết lập thời hạn, danh sách checklist con và lưu trữ tài liệu liên quan
@@ -529,7 +531,7 @@ export default function TaskModal({
               type="submit"
               className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-sage-600 hover:bg-sage-700 shadow-soft shadow-sage-600/30 transition-all active:scale-[0.98]"
             >
-              {taskToEdit ? 'Lưu thay đổi' : 'Tạo công việc'}
+              {taskToEdit && !taskToEdit._isNew ? 'Lưu thay đổi' : 'Tạo công việc'}
             </button>
           </div>
 

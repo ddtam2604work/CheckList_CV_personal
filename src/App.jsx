@@ -66,9 +66,16 @@ export default function App() {
     await saveTasks(newTasks);
   };
 
-  // Task actions
-  const handleOpenCreateTask = () => {
-    setTaskToEdit(null);
+  const handleOpenCreateTask = (initialDate = null) => {
+    if (initialDate) {
+      setTaskToEdit({
+        _isNew: true,
+        startDate: initialDate + 'T08:00',
+        endDate: initialDate + 'T17:00',
+      });
+    } else {
+      setTaskToEdit(null);
+    }
     setIsTaskModalOpen(true);
   };
 
@@ -173,6 +180,7 @@ export default function App() {
                   tasks={tasks}
                   onEditTask={handleEditTask}
                   onToggleStatus={handleToggleStatus}
+                  onOpenCreateTask={handleOpenCreateTask}
                   onOpenVaultWithTask={handleOpenVaultWithTask}
                 />
               )}
