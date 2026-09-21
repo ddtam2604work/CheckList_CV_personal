@@ -182,14 +182,13 @@ export default function TaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
       <div 
-        className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl shadow-2xl overflow-hidden my-6 transition-all"
+        className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] transition-all"
         onClick={(e) => e.stopPropagation()}
       >
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        {/* Header - Fixed */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               {taskToEdit && !taskToEdit._isNew ? 'Chỉnh sửa công việc' : 'Tạo công việc mới'}
@@ -199,6 +198,7 @@ export default function TaskModal({
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
@@ -206,8 +206,10 @@ export default function TaskModal({
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+        {/* Form - Flex Column */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Scrollable Form Body - Only this scrolls */}
+          <div className="p-6 space-y-5 overflow-y-auto flex-1 overscroll-contain">
           
           {errorMsg && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
@@ -580,21 +582,29 @@ export default function TaskModal({
             )}
           </div>
 
-          {/* Form Actions Footer */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-sage-600 hover:bg-sage-700 shadow-soft shadow-sage-600/30 transition-all active:scale-[0.98]"
-            >
-              {taskToEdit && !taskToEdit._isNew ? 'Lưu thay đổi' : 'Tạo công việc'}
-            </button>
+          </div>
+
+          {/* Form Actions Footer - Fixed at bottom */}
+          <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/95 dark:bg-slate-850/95 backdrop-blur-md z-10">
+            <span className="text-xs text-slate-400 hidden sm:inline">
+              <span className="text-rose-500">*</span> Các mục có dấu sao là bắt buộc
+            </span>
+            <div className="flex items-center gap-2.5 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-sage-600 hover:bg-sage-700 shadow-soft shadow-sage-600/30 transition-all active:scale-[0.98] flex items-center gap-1.5"
+              >
+                <CheckSquare className="w-4 h-4" />
+                <span>{taskToEdit && !taskToEdit._isNew ? 'Lưu thay đổi' : 'Tạo công việc'}</span>
+              </button>
+            </div>
           </div>
 
         </form>

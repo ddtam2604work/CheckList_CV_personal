@@ -27,3 +27,6 @@
     - **Quét hạn chót thông minh**: Tự động phát hiện công việc quá hạn, sắp đến hạn trong vòng 24 giờ và nhắc nhở sao lưu dữ liệu.
     - **Hệ thống Toast thông báo nổi (Toast Container)**: Thông báo tức thời khi người dùng tạo/sửa/xóa task, đổi trạng thái, quản lý nhóm và sao lưu dữ liệu với giao diện Sage cao cấp, animation và progress bar.
     - Hỗ trợ Web Notifications API trình duyệt.
+  - [x] **[TỐI ƯU FONT CHỮ PHỔ BIẾN & CỐ ĐỊNH NÚT LƯU/HỦY MODAL]:**
+    - Nâng cấp font chữ toàn website sang bộ đôi chuẩn mực **`Be Vietnam Pro`** & **`Inter`** tối ưu hiển thị tiếng Việt, dễ đọc, êm mắt.
+    - Cấu trúc lại `TaskModal` và các modal theo Flex Column: Header cố định trên đỉnh, phần nội dung form cuộn độc lập ở giữa, các nút **"Hủy bỏ"** và **"Lưu thay đổi / Tạo công việc"** cố định ở đáy modal, luôn hiển thị trong tầm mắt người dùng.
