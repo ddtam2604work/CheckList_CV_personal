@@ -11,7 +11,15 @@ import TaskModal from './components/TaskModal';
 import BackupModal from './components/BackupModal';
 import ImageLightboxModal from './components/ImageLightboxModal';
 import CategoryManagerModal from './components/CategoryManagerModal';
+import ToastContainer from './components/ToastContainer';
 import { loadTasks, saveTasks, loadCategories, saveCategories } from './services/storageService';
+import { 
+  generateNotifications, 
+  getReadNotificationIds, 
+  saveReadNotificationIds, 
+  getDismissedNotificationIds, 
+  saveDismissedNotificationIds 
+} from './services/notificationService';
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
@@ -73,9 +81,65 @@ export default function App() {
     await saveTasks(newTasks);
   };
 
+  // Toast notifications state
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (title, message = '', type = 'info', duration = 3500) => {
+    const id = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+    setToasts((prev) => [...prev, { id, title, message, type, duration }]);
+  };
+
+  const handleDismissToast = (toastId) => {
+    setToasts((prev) => prev.filter((t) => t.id !== toastId));
+  };
+
+  // Notifications state
+  const [readNotifIds, setReadNotifIds] = useState(getReadNotificationIds);
+  const [dismissedNotifIds, setDismissedNotifIds] = useState(getDismissedNotificationIds);
+
+  const notifications = useMemo(() => {
+    return generateNotifications(tasks);
+  }, [tasks, readNotifIds, dismissedNotifIds]);
+
+  const handleMarkAsRead = (notifId) => {
+    const updated = Array.from(new Set([...readNotifIds, notifId]));
+    setReadNotifIds(updated);
+    saveReadNotificationIds(updated);
+  };
+
+  const handleMarkAllAsRead = () => {
+    const allIds = notifications.map((n) => n.id);
+    const updated = Array.from(new Set([...readNotifIds, ...allIds]));
+    setReadNotifIds(updated);
+    saveReadNotificationIds(updated);
+    showToast('Đã đọc tất cả', 'Tất cả thông báo đã được đánh dấu là đã đọc.', 'info');
+  };
+
+  const handleDismissNotification = (notifId) => {
+    const updated = Array.from(new Set([...dismissedNotifIds, notifId]));
+    setDismissedNotifIds(updated);
+    saveDismissedNotificationIds(updated);
+  };
+
+  const handleClearAllNotifications = () => {
+    const allIds = notifications.map((n) => n.id);
+    const updated = Array.from(new Set([...dismissedNotifIds, ...allIds]));
+    setDismissedNotifIds(updated);
+    saveDismissedNotificationIds(updated);
+    showToast('Đã dọn dẹp', 'Toàn bộ thông báo đã được dọn sạch.', 'info');
+  };
+
+  const handleSelectTaskFromNotification = (taskId) => {
+    const target = tasks.find((t) => t.id === taskId);
+    if (target) {
+      handleEditTask(target);
+    }
+  };
+
   // Category actions
   const handleAddCategory = async (catName, color = 'sage') => {
     if (!catName || categories.some(c => c.name.toLowerCase() === catName.toLowerCase())) {
+      showToast('Không thể thêm', 'Tên nhóm không hợp lệ hoặc đã tồn tại.', 'warning');
       return;
     }
     const newCat = {
@@ -86,12 +150,15 @@ export default function App() {
     const updated = [...categories, newCat];
     setCategories(updated);
     await saveCategories(updated);
+    showToast('Thêm nhóm thành công', `Đã tạo nhóm "${catName}".`, 'success');
   };
 
   const handleDeleteCategory = async (catId) => {
+    const cat = categories.find(c => c.id === catId);
     const updated = categories.filter(c => c.id !== catId);
     setCategories(updated);
     await saveCategories(updated);
+    showToast('Đã xóa nhóm', `Đã loại bỏ nhóm "${cat?.name || ''}".`, 'warning');
   };
 
   const handleOpenCreateTask = (initialDate = null) => {
@@ -117,20 +184,32 @@ export default function App() {
     const exists = tasks.some(t => t.id === taskData.id);
     if (exists) {
       updated = tasks.map(t => t.id === taskData.id ? taskData : t);
+      showToast('Cập nhật thành công', `Đã lưu các thay đổi của "${taskData.title}".`, 'info');
     } else {
       updated = [taskData, ...tasks];
+      showToast('Tạo công việc thành công', `Đã thêm "${taskData.title}" vào danh sách.`, 'success');
     }
     await updateTasks(updated);
   };
 
   const handleDeleteTask = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
     const updated = tasks.filter(t => t.id !== taskId);
     await updateTasks(updated);
+    showToast('Đã xóa công việc', `"${task?.title || 'Công việc'}" đã được xóa khỏi hệ thống.`, 'warning');
   };
 
   const handleToggleStatus = async (taskId, newStatus) => {
+    const target = tasks.find(t => t.id === taskId);
     const updated = tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t);
     await updateTasks(updated);
+    if (newStatus === 'done') {
+      showToast('Hoàn thành xuất sắc! 🎉', `Đã hoàn thành: "${target?.title || ''}".`, 'success');
+    } else if (newStatus === 'in_progress') {
+      showToast('Bắt đầu thực hiện', `Đang xử lý: "${target?.title || ''}".`, 'info');
+    } else {
+      showToast('Chuyển trạng thái', `Chuyển về Cần làm: "${target?.title || ''}".`, 'info');
+    }
   };
 
   const handleOpenVaultWithTask = (taskId) => {
@@ -155,6 +234,12 @@ export default function App() {
         onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
         isDark={isDark}
         toggleDarkMode={toggleDarkMode}
+        notifications={notifications}
+        onMarkAsRead={handleMarkAsRead}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onDismissNotification={handleDismissNotification}
+        onClearAllNotifications={handleClearAllNotifications}
+        onSelectTask={handleSelectTaskFromNotification}
       />
 
       {/* Main Content */}
@@ -261,9 +346,16 @@ export default function App() {
         isOpen={isBackupModalOpen}
         onClose={() => setIsBackupModalOpen(false)}
         onDataRestored={(data) => {
-          if (data && data.tasks) setTasks(data.tasks);
-          else if (Array.isArray(data)) setTasks(data);
+          let count = 0;
+          if (data && data.tasks) {
+            setTasks(data.tasks);
+            count = data.tasks.length;
+          } else if (Array.isArray(data)) {
+            setTasks(data);
+            count = data.length;
+          }
           if (data && data.categories) setCategories(data.categories);
+          showToast('Khôi phục dữ liệu thành công', `Đã nhập ${count} công việc vào hệ thống.`, 'success');
         }}
       />
 
@@ -271,6 +363,9 @@ export default function App() {
         image={lightboxImage}
         onClose={() => setLightboxImage(null)}
       />
+
+      {/* Floating Toast System */}
+      <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
 
       {/* Footer */}
       <footer className="border-t border-slate-200/80 dark:border-slate-800/80 py-6 text-center text-xs text-slate-400">

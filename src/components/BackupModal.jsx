@@ -33,6 +33,7 @@ export default function BackupModal({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      localStorage.setItem('checklist_last_backup_date', new Date().toISOString());
       setMsg({ type: 'success', text: 'Xuất file sao lưu thành công! Bạn có thể lưu giữ hoặc chuyển sang máy khác.' });
     } catch (err) {
       setMsg({ type: 'error', text: 'Lỗi khi xuất sao lưu: ' + err.message });

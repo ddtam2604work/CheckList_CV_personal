@@ -22,3 +22,8 @@
     - Tạo script tự động `scripts/sync-build.js` liên kết với lệnh `npm run build`.
     - Sinh `manifest.json` và bổ sung dynamic bundle loader trong `index.html` cho static hosting từ thư mục gốc `/`.
     - Đồng bộ bản build production sang `assets/`, `docs/`, và nhánh `gh-pages` (hỗ trợ cả 4 phương thức deploy GitHub Pages).
+  - [x] **[XÂY DỰNG GIAO DIỆN & HỆ THỐNG THÔNG BÁO CHUẨN CHỈNH TOÀN BỘ WEBSITE]:**
+    - **Trung tâm thông báo (Notification Center)** trên Header: Icon chuông, badge đếm số lượng chưa đọc, phân loại thông báo (Tất cả, Hạn chót, Hệ thống), đánh dấu đã đọc, xóa, chuyển đến task.
+    - **Quét hạn chót thông minh**: Tự động phát hiện công việc quá hạn, sắp đến hạn trong vòng 24 giờ và nhắc nhở sao lưu dữ liệu.
+    - **Hệ thống Toast thông báo nổi (Toast Container)**: Thông báo tức thời khi người dùng tạo/sửa/xóa task, đổi trạng thái, quản lý nhóm và sao lưu dữ liệu với giao diện Sage cao cấp, animation và progress bar.
+    - Hỗ trợ Web Notifications API trình duyệt.

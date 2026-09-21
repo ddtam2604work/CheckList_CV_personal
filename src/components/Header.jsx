@@ -9,6 +9,8 @@ import {
   X
 } from 'lucide-react';
 
+import NotificationCenter from './NotificationCenter';
+
 export default function Header({
   searchQuery,
   setSearchQuery,
@@ -16,7 +18,13 @@ export default function Header({
   onOpenBackupModal,
   onOpenCategoryManager,
   isDark,
-  toggleDarkMode
+  toggleDarkMode,
+  notifications,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onDismissNotification,
+  onClearAllNotifications,
+  onSelectTask,
 }) {
   return (
     <header className="sticky top-0 z-30 glass-panel border-b border-slate-200/80 dark:border-slate-800 transition-colors">
@@ -94,6 +102,17 @@ export default function Header({
             >
               <Database className="w-4 h-4" />
             </button>
+
+            {/* Notification Center */}
+            <NotificationCenter
+              notifications={notifications}
+              onMarkAsRead={onMarkAsRead}
+              onMarkAllAsRead={onMarkAllAsRead}
+              onDismissNotification={onDismissNotification}
+              onClearAllNotifications={onClearAllNotifications}
+              onSelectTask={onSelectTask}
+              onOpenBackupModal={onOpenBackupModal}
+            />
 
             {/* Dark / Light Toggle */}
             <button
