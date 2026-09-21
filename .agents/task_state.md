@@ -17,3 +17,8 @@
     - Bộ lọc danh mục thông minh trong `TaskListView` với tùy chọn quản lý nhanh.
     - Lưu trữ danh mục lâu dài vào IndexedDB và tích hợp vào file sao lưu JSON.
   - [x] Build và deploy trực tiếp lên [ddtam2604work/CheckList_CV_personal](https://github.com/ddtam2604work/CheckList_CV_personal) hoạt động 100%.
+  - [x] **[KHẮC PHỤC TRIỆT ĐỂ LỖI TRANG TRẮNG GITHUB PAGES]:**
+    - Loại bỏ thẻ bundle hardcode trong `index.html` gây lỗi `Could not resolve` trên GitHub Actions.
+    - Tạo script tự động `scripts/sync-build.js` liên kết với lệnh `npm run build`.
+    - Sinh `manifest.json` và bổ sung dynamic bundle loader trong `index.html` cho static hosting từ thư mục gốc `/`.
+    - Đồng bộ bản build production sang `assets/`, `docs/`, và nhánh `gh-pages` (hỗ trợ cả 4 phương thức deploy GitHub Pages).
