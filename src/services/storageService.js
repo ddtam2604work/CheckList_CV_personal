@@ -1,7 +1,17 @@
 import { get, set } from 'idb-keyval';
 
 const STORAGE_KEY_TASKS = 'checklist_cv_tasks_v1';
+const STORAGE_KEY_CATEGORIES = 'checklist_cv_categories_v1';
 const STORAGE_KEY_SETTINGS = 'checklist_cv_settings_v1';
+
+export const DEFAULT_CATEGORIES = [
+  { id: 'cat-1', name: 'Sự nghiệp', color: 'emerald' },
+  { id: 'cat-2', name: 'Dự án CV', color: 'sage' },
+  { id: 'cat-3', name: 'Học tập', color: 'blue' },
+  { id: 'cat-4', name: 'Cá nhân', color: 'purple' },
+  { id: 'cat-5', name: 'Sức khỏe', color: 'amber' },
+  { id: 'cat-6', name: 'Tài chính', color: 'rose' },
+];
 
 // Sample visual placeholder image (SVG data URL encoded)
 const SAMPLE_PREVIEW_IMG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="%23e5ece7"/><circle cx="300" cy="180" r="70" fill="%235f876f" opacity="0.3"/><path d="M180,320 C220,250 380,250 420,320" stroke="%235f876f" stroke-width="14" fill="none" stroke-linecap="round"/><text x="50%" y="360" font-family="sans-serif" font-size="20" fill="%233c5746" text-anchor="middle" font-weight="bold">CheckList CV - Tài liệu mẫu</text></svg>`;
@@ -174,13 +184,54 @@ export async function saveTasks(tasks) {
   }
 }
 
+export async function loadCategories() {
+  try {
+    const data = await get(STORAGE_KEY_CATEGORIES);
+    if (data && Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('Lỗi đọc categories từ IndexedDB:', err);
+  }
+
+  try {
+    const local = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Lỗi đọc categories localStorage:', e);
+  }
+
+  await saveCategories(DEFAULT_CATEGORIES);
+  return DEFAULT_CATEGORIES;
+}
+
+export async function saveCategories(categories) {
+  try {
+    await set(STORAGE_KEY_CATEGORIES, categories);
+  } catch (err) {
+    console.error('Lỗi khi lưu categories vào IndexedDB:', err);
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories));
+  } catch (e) {
+    console.warn('Lỗi khi lưu categories vào localStorage:', e);
+  }
+}
+
 export async function exportBackupData() {
   const tasks = await loadTasks();
+  const categories = await loadCategories();
   const backup = {
     app: 'CheckList CV Personal',
     version: '1.0.0',
     exportedAt: new Date().toISOString(),
-    tasks: tasks
+    tasks: tasks,
+    categories: categories
   };
   return JSON.stringify(backup, null, 2);
 }
@@ -192,7 +243,10 @@ export async function importBackupData(jsonString) {
       throw new Error('Định dạng tệp sao lưu không hợp lệ (thiếu danh sách tasks)');
     }
     await saveTasks(parsed.tasks);
-    return parsed.tasks;
+    if (Array.isArray(parsed.categories)) {
+      await saveCategories(parsed.categories);
+    }
+    return { tasks: parsed.tasks, categories: parsed.categories || DEFAULT_CATEGORIES };
   } catch (error) {
     throw new Error('Lỗi khi đọc file sao lưu: ' + error.message);
   }
@@ -200,7 +254,8 @@ export async function importBackupData(jsonString) {
 
 export async function resetToSampleData() {
   await saveTasks(SAMPLE_TASKS);
-  return SAMPLE_TASKS;
+  await saveCategories(DEFAULT_CATEGORIES);
+  return { tasks: SAMPLE_TASKS, categories: DEFAULT_CATEGORIES };
 }
 
 // Helper to convert browser File object to persistent attachment record

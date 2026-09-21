@@ -44,9 +44,10 @@ export default function BackupModal({
     if (!file) return;
     try {
       const text = await file.text();
-      const updatedTasks = await importBackupData(text);
-      onDataRestored(updatedTasks);
-      setMsg({ type: 'success', text: `Khôi phục thành công ${updatedTasks.length} công việc!` });
+      const result = await importBackupData(text);
+      onDataRestored(result);
+      const taskCount = result.tasks ? result.tasks.length : (Array.isArray(result) ? result.length : 0);
+      setMsg({ type: 'success', text: `Khôi phục thành công ${taskCount} công việc và các danh mục!` });
     } catch (err) {
       setMsg({ type: 'error', text: 'Lỗi khi đọc file sao lưu: ' + err.message });
     } finally {
@@ -57,8 +58,8 @@ export default function BackupModal({
   const handleResetSample = async () => {
     if (confirm('Bạn có chắc muốn nạp lại dữ liệu mẫu? Các công việc hiện tại sẽ được thay thế bằng bộ mẫu chuẩn.')) {
       try {
-        const samples = await resetToSampleData();
-        onDataRestored(samples);
+        const result = await resetToSampleData();
+        onDataRestored(result);
         setMsg({ type: 'success', text: 'Đã nạp lại bộ dữ liệu mẫu thành công!' });
       } catch (err) {
         setMsg({ type: 'error', text: 'Lỗi khi đặt lại dữ liệu: ' + err.message });

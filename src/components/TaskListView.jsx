@@ -8,9 +8,12 @@ import {
   SearchX
 } from 'lucide-react';
 import TaskCard from './TaskCard';
+import { Tag } from 'lucide-react';
 
 export default function TaskListView({
   tasks,
+  categories = [],
+  onOpenCategoryManager,
   searchQuery,
   onEditTask,
   onDeleteTask,
@@ -23,16 +26,17 @@ export default function TaskListView({
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [sortBy, setSortBy] = useState('deadline'); // 'deadline', 'priority', 'newest'
 
-  // Extract unique categories
-  const categories = useMemo(() => {
+  // Extract combined unique categories
+  const allCategoryNames = useMemo(() => {
     const set = new Set();
+    categories.forEach(c => c.name && set.add(c.name.trim()));
     tasks.forEach(t => {
       if (t.category && t.category.trim()) {
         set.add(t.category.trim());
       }
     });
     return Array.from(set);
-  }, [tasks]);
+  }, [tasks, categories]);
 
   // Filter and sort tasks
   const filteredTasks = useMemo(() => {
@@ -118,19 +122,26 @@ export default function TaskListView({
           {/* Secondary Filters: Category, Priority, Sort */}
           <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto justify-end text-xs">
             
-            {/* Category Dropdown */}
-            {categories.length > 0 && (
+            {/* Category Dropdown & Manage */}
+            <div className="flex items-center gap-1">
               <select
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value === '__manage__') {
+                    if (onOpenCategoryManager) onOpenCategoryManager();
+                  } else {
+                    setCategoryFilter(e.target.value);
+                  }
+                }}
                 className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-sage-500/20"
               >
-                <option value="all">Tất cả danh mục</option>
-                {categories.map(cat => (
+                <option value="all">Tất cả nhóm/danh mục</option>
+                {allCategoryNames.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
+                <option value="__manage__">+ Quản lý danh mục...</option>
               </select>
-            )}
+            </div>
 
             {/* Priority Dropdown */}
             <select

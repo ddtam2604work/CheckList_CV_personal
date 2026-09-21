@@ -10,7 +10,8 @@ import MediaVaultView from './components/MediaVaultView';
 import TaskModal from './components/TaskModal';
 import BackupModal from './components/BackupModal';
 import ImageLightboxModal from './components/ImageLightboxModal';
-import { loadTasks, saveTasks } from './services/storageService';
+import CategoryManagerModal from './components/CategoryManagerModal';
+import { loadTasks, saveTasks, loadCategories, saveCategories } from './services/storageService';
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
@@ -22,8 +23,10 @@ export default function App() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
   const [vaultSelectedTaskId, setVaultSelectedTaskId] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   // Dark mode state
   const [isDark, setIsDark] = useState(() => {
@@ -45,12 +48,16 @@ export default function App() {
 
   const toggleDarkMode = () => setIsDark(prev => !prev);
 
-  // Load initial tasks from IndexedDB
+  // Load initial tasks & categories from IndexedDB
   useEffect(() => {
     async function initData() {
       try {
-        const loaded = await loadTasks();
-        setTasks(loaded || []);
+        const [loadedTasks, loadedCats] = await Promise.all([
+          loadTasks(),
+          loadCategories()
+        ]);
+        setTasks(loadedTasks || []);
+        setCategories(loadedCats || []);
       } catch (err) {
         console.error('Lỗi khởi tạo dữ liệu:', err);
       } finally {
@@ -64,6 +71,27 @@ export default function App() {
   const updateTasks = async (newTasks) => {
     setTasks(newTasks);
     await saveTasks(newTasks);
+  };
+
+  // Category actions
+  const handleAddCategory = async (catName, color = 'sage') => {
+    if (!catName || categories.some(c => c.name.toLowerCase() === catName.toLowerCase())) {
+      return;
+    }
+    const newCat = {
+      id: 'cat-' + Date.now(),
+      name: catName,
+      color: color
+    };
+    const updated = [...categories, newCat];
+    setCategories(updated);
+    await saveCategories(updated);
+  };
+
+  const handleDeleteCategory = async (catId) => {
+    const updated = categories.filter(c => c.id !== catId);
+    setCategories(updated);
+    await saveCategories(updated);
   };
 
   const handleOpenCreateTask = (initialDate = null) => {
@@ -124,6 +152,7 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         onOpenCreateTask={handleOpenCreateTask}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
+        onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
         isDark={isDark}
         toggleDarkMode={toggleDarkMode}
       />
@@ -155,6 +184,8 @@ export default function App() {
               {currentView === 'list' && (
                 <TaskListView
                   tasks={tasks}
+                  categories={categories}
+                  onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
                   searchQuery={searchQuery}
                   onEditTask={handleEditTask}
                   onDeleteTask={handleDeleteTask}
@@ -213,12 +244,27 @@ export default function App() {
         taskToEdit={taskToEdit}
         onSaveTask={handleSaveTask}
         onPreviewImage={(img) => setLightboxImage(img)}
+        categories={categories}
+        onAddCategory={handleAddCategory}
+      />
+
+      <CategoryManagerModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        categories={categories}
+        tasks={tasks}
+        onAddCategory={handleAddCategory}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <BackupModal
         isOpen={isBackupModalOpen}
         onClose={() => setIsBackupModalOpen(false)}
-        onDataRestored={(newTasks) => setTasks(newTasks)}
+        onDataRestored={(data) => {
+          if (data && data.tasks) setTasks(data.tasks);
+          else if (Array.isArray(data)) setTasks(data);
+          if (data && data.categories) setCategories(data.categories);
+        }}
       />
 
       <ImageLightboxModal
