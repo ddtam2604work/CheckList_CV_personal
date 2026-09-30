@@ -6,7 +6,8 @@ import {
   Moon, 
   Database, 
   FolderKanban,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 
 import NotificationCenter from './NotificationCenter';
@@ -17,6 +18,7 @@ export default function Header({
   onOpenCreateTask,
   onOpenBackupModal,
   onOpenCategoryManager,
+  onOpenAICopilot,
   isDark,
   toggleDarkMode,
   notifications,
@@ -81,6 +83,17 @@ export default function Header({
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span className="hidden xs:inline">Tạo Task</span>
+            </button>
+
+            {/* AI Copilot Button */}
+            <button
+              id="btn-open-ai-copilot"
+              onClick={onOpenAICopilot}
+              title="Trợ lý AI Copilot - Phân tích tiến độ & Điều phối ưu tiên"
+              className="p-2 rounded-xl text-sage-700 dark:text-sage-300 bg-sage-50 dark:bg-sage-950/60 hover:bg-sage-100 dark:hover:bg-sage-900/60 transition-colors border border-sage-200/80 dark:border-sage-800 flex items-center gap-1.5"
+            >
+              <Sparkles className="w-4 h-4 text-sage-600 dark:text-sage-400" />
+              <span className="text-xs font-bold hidden sm:inline">AI Copilot</span>
             </button>
 
             {/* Category / Group Manager */}
