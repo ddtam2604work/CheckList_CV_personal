@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Sparkles } from 'lucide-react';
 import Header from './components/Header';
 import StatsBanner from './components/StatsBanner';
 import ViewSwitcher from './components/ViewSwitcher';
@@ -9,6 +10,7 @@ import AnalyticsView from './components/AnalyticsView';
 import MediaVaultView from './components/MediaVaultView';
 import ProductLaunchView from './components/ProductLaunchView';
 import ProductModal from './components/ProductModal';
+import AICopilotDrawer from './components/AICopilotDrawer';
 import TaskModal from './components/TaskModal';
 import BackupModal from './components/BackupModal';
 import ImageLightboxModal from './components/ImageLightboxModal';
@@ -50,6 +52,7 @@ export default function App() {
   const [productToEdit, setProductToEdit] = useState(null);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isAICopilotOpen, setIsAICopilotOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
   const [vaultSelectedTaskId, setVaultSelectedTaskId] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -362,6 +365,7 @@ export default function App() {
         onOpenCreateTask={handleOpenCreateTask}
         onOpenBackupModal={() => setIsBackupModalOpen(true)}
         onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
+        onOpenAICopilot={() => setIsAICopilotOpen(true)}
         isDark={isDark}
         toggleDarkMode={toggleDarkMode}
         notifications={notifications}
@@ -517,6 +521,28 @@ export default function App() {
         image={lightboxImage}
         onClose={() => setLightboxImage(null)}
       />
+
+      {/* AI Copilot Drawer */}
+      <AICopilotDrawer
+        isOpen={isAICopilotOpen}
+        onClose={() => setIsAICopilotOpen(false)}
+        tasks={tasks}
+        products={products}
+        categories={categories}
+      />
+
+      {/* Floating AI Copilot Trigger Button */}
+      <button
+        id="btn-floating-ai-copilot"
+        onClick={() => setIsAICopilotOpen(true)}
+        title="Mở Trợ lý AI Copilot"
+        className="fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl bg-gradient-to-r from-sage-600 to-emerald-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 group border border-white/20"
+      >
+        <Sparkles className="w-5 h-5 animate-pulse" />
+        <span className="text-xs font-bold max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">
+          AI Copilot
+        </span>
+      </button>
 
       {/* Floating Toast System */}
       <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
