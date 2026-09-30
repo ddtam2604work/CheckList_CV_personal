@@ -7,12 +7,22 @@ import KanbanView from './components/KanbanView';
 import CalendarTimelineView from './components/CalendarTimelineView';
 import AnalyticsView from './components/AnalyticsView';
 import MediaVaultView from './components/MediaVaultView';
+import ProductLaunchView from './components/ProductLaunchView';
+import ProductModal from './components/ProductModal';
 import TaskModal from './components/TaskModal';
 import BackupModal from './components/BackupModal';
 import ImageLightboxModal from './components/ImageLightboxModal';
 import CategoryManagerModal from './components/CategoryManagerModal';
 import ToastContainer from './components/ToastContainer';
-import { loadTasks, saveTasks, loadCategories, saveCategories } from './services/storageService';
+import { 
+  loadTasks, 
+  saveTasks, 
+  loadCategories, 
+  saveCategories, 
+  loadProducts, 
+  saveProducts,
+  SAMPLE_PRODUCTS 
+} from './services/storageService';
 import { 
   generateNotifications, 
   getReadNotificationIds, 
@@ -20,9 +30,15 @@ import {
   getDismissedNotificationIds, 
   saveDismissedNotificationIds 
 } from './services/notificationService';
+import { 
+  sendProductLaunchEmail, 
+  isWithinTwoDaysWindow, 
+  DEFAULT_NOTIFICATION_EMAIL 
+} from './services/emailService';
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
+  const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +46,8 @@ export default function App() {
   // Modals state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState(null);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
@@ -56,16 +74,18 @@ export default function App() {
 
   const toggleDarkMode = () => setIsDark(prev => !prev);
 
-  // Load initial tasks & categories from IndexedDB
+  // Load initial tasks, categories & products from IndexedDB
   useEffect(() => {
     async function initData() {
       try {
-        const [loadedTasks, loadedCats] = await Promise.all([
+        const [loadedTasks, loadedCats, loadedProducts] = await Promise.all([
           loadTasks(),
-          loadCategories()
+          loadCategories(),
+          loadProducts()
         ]);
         setTasks(loadedTasks || []);
         setCategories(loadedCats || []);
+        setProducts(loadedProducts || []);
       } catch (err) {
         console.error('Lỗi khởi tạo dữ liệu:', err);
       } finally {
@@ -79,6 +99,12 @@ export default function App() {
   const updateTasks = async (newTasks) => {
     setTasks(newTasks);
     await saveTasks(newTasks);
+  };
+
+  // Save products on changes
+  const updateProducts = async (newProducts) => {
+    setProducts(newProducts);
+    await saveProducts(newProducts);
   };
 
   // Toast notifications state
@@ -98,8 +124,58 @@ export default function App() {
   const [dismissedNotifIds, setDismissedNotifIds] = useState(getDismissedNotificationIds);
 
   const notifications = useMemo(() => {
-    return generateNotifications(tasks);
-  }, [tasks, readNotifIds, dismissedNotifIds]);
+    return generateNotifications(tasks, products);
+  }, [tasks, products, readNotifIds, dismissedNotifIds]);
+
+  const launchesDueCount = useMemo(() => {
+    return products.filter((p) => isWithinTwoDaysWindow(p.releaseDate)).length;
+  }, [products]);
+
+  // Tự động kiểm tra và gửi email thông báo trước 2 ngày (48 giờ) đến duytam262004@gmail.com
+  useEffect(() => {
+    if (isLoading || products.length === 0) return;
+
+    const scanAndNotify = async () => {
+      const dueProducts = products.filter(
+        (p) => isWithinTwoDaysWindow(p.releaseDate) && !p.notified2DaysBefore
+      );
+
+      if (dueProducts.length === 0) return;
+
+      for (const prod of dueProducts) {
+        try {
+          const res = await sendProductLaunchEmail({ product: prod });
+          if (res.success) {
+            showToast(
+              'Tự động gửi email thông báo 🚀',
+              `Sản phẩm "${prod.name}" sắp ra mắt sau ít hơn 2 ngày. Đã gửi email đến ${prod.email || DEFAULT_NOTIFICATION_EMAIL}.`,
+              'success',
+              5000
+            );
+            setProducts((prev) => {
+              const updated = prev.map((item) =>
+                item.id === prod.id
+                  ? {
+                      ...item,
+                      notified2DaysBefore: true,
+                      notifiedAt: new Date().toISOString()
+                    }
+                  : item
+              );
+              saveProducts(updated);
+              return updated;
+            });
+          }
+        } catch (err) {
+          console.error('Lỗi tự động gửi thông báo lịch ra mắt:', err);
+        }
+      }
+    };
+
+    scanAndNotify();
+    const interval = setInterval(scanAndNotify, 60000);
+    return () => clearInterval(interval);
+  }, [products, isLoading]);
 
   const handleMarkAsRead = (notifId) => {
     const updated = Array.from(new Set([...readNotifIds, notifId]));
@@ -134,6 +210,60 @@ export default function App() {
     if (target) {
       handleEditTask(target);
     }
+  };
+
+  const handleSelectProductFromNotification = (productId) => {
+    setCurrentView('launches');
+    const target = products.find((p) => p.id === productId);
+    if (target) {
+      handleEditProduct(target);
+    }
+  };
+
+  // Product launch actions
+  const handleSaveProduct = async (productData) => {
+    let updated;
+    const exists = products.some((p) => p.id === productData.id);
+    if (exists) {
+      updated = products.map((p) => (p.id === productData.id ? productData : p));
+      showToast('Cập nhật thành công', `Đã lưu các thay đổi của "${productData.name}".`, 'info');
+    } else {
+      updated = [productData, ...products];
+      showToast('Lên lịch thành công 🚀', `Đã thêm "${productData.name}" vào lịch ra mắt.`, 'success');
+    }
+    await updateProducts(updated);
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    const target = products.find((p) => p.id === productId);
+    const updated = products.filter((p) => p.id !== productId);
+    await updateProducts(updated);
+    showToast('Đã xóa sản phẩm', `"${target?.name || 'Sản phẩm'}" đã được loại bỏ.`, 'warning');
+  };
+
+  const handleUpdateSingleProduct = async (updatedProduct) => {
+    const updated = products.map((p) => (p.id === updatedProduct.id ? updatedProduct : p));
+    await updateProducts(updated);
+  };
+
+  const handleLoadSampleProducts = async () => {
+    await updateProducts(SAMPLE_PRODUCTS);
+    showToast('Đã nạp dữ liệu mẫu test', 'Đã thêm 2 sản phẩm mẫu để kiểm tra tính năng đếm ngược & gửi mail.', 'info');
+  };
+
+  const handleClearSampleProducts = async () => {
+    await updateProducts([]);
+    showToast('Đã dọn sạch kho sản phẩm', 'Kho dữ liệu lịch ra mắt hoàn toàn trống, sẵn sàng cho việc sử dụng thực tế.', 'info');
+  };
+
+  const handleOpenCreateProduct = () => {
+    setProductToEdit(null);
+    setIsProductModalOpen(true);
+  };
+
+  const handleEditProduct = (product) => {
+    setProductToEdit(product);
+    setIsProductModalOpen(true);
   };
 
   // Category actions
@@ -240,6 +370,7 @@ export default function App() {
         onDismissNotification={handleDismissNotification}
         onClearAllNotifications={handleClearAllNotifications}
         onSelectTask={handleSelectTaskFromNotification}
+        onSelectProduct={handleSelectProductFromNotification}
       />
 
       {/* Main Content */}
@@ -261,6 +392,7 @@ export default function App() {
                 currentView={currentView}
                 setCurrentView={setCurrentView}
                 attachmentsCount={totalAttachmentsCount}
+                launchesDueCount={launchesDueCount}
               />
             </div>
 
@@ -301,6 +433,19 @@ export default function App() {
                 />
               )}
 
+              {currentView === 'launches' && (
+                <ProductLaunchView
+                  products={products}
+                  onOpenCreateProduct={handleOpenCreateProduct}
+                  onEditProduct={handleEditProduct}
+                  onDeleteProduct={handleDeleteProduct}
+                  onUpdateProduct={handleUpdateSingleProduct}
+                  onLoadSampleProducts={handleLoadSampleProducts}
+                  onClearSampleProducts={handleClearSampleProducts}
+                  onTriggerToast={showToast}
+                />
+              )}
+
               {currentView === 'analytics' && (
                 <AnalyticsView
                   tasks={tasks}
@@ -323,6 +468,14 @@ export default function App() {
       </main>
 
       {/* Modals */}
+      <ProductModal
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+        productToEdit={productToEdit}
+        onSaveProduct={handleSaveProduct}
+        onTriggerToast={showToast}
+      />
+
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
@@ -355,7 +508,8 @@ export default function App() {
             count = data.length;
           }
           if (data && data.categories) setCategories(data.categories);
-          showToast('Khôi phục dữ liệu thành công', `Đã nhập ${count} công việc vào hệ thống.`, 'success');
+          if (data && data.products) setProducts(data.products);
+          showToast('Khôi phục dữ liệu thành công', `Đã khôi phục ${count} công việc và dữ liệu sản phẩm.`, 'success');
         }}
       />
 

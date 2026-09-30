@@ -1,8 +1,8 @@
 # TRẠNG THÁI CÔNG VIỆC (TASK STATE)
 
-- **Thời gian cập nhật:** 2026-09-21T12:06:40+07:00
+- **Thời gian cập nhật:** 2026-09-30T08:51:00+07:00
 - **Trạng thái:** HOÀN THÀNH 100% (Completed)
-- **Mục tiêu task:** Xây dựng website checklist công việc với giao diện dịu mắt, biểu đồ thống kê, không gian lưu trữ tài liệu/ảnh, deploy GitHub Pages, nâng cấp module Lịch theo chuẩn Google Calendar và bổ sung tính năng quản lý Danh mục / Nhóm công việc.
+- **Mục tiêu task:** Xây dựng tính năng "Lịch ra mắt sản phẩm" (Product Launch Calendar) tự động thông báo trước 2 ngày qua email `duytam262004@gmail.com`. Cho phép thêm sản phẩm với tên và thời gian ra mắt, có công cụ nạp dữ liệu mẫu thử nghiệm nhưng mặc định kho sạch sẽ (không chứa dữ liệu mẫu khi người dùng sử dụng).
 - **Tiến độ chi tiết:**
   - [x] Khởi tạo dự án React 18 + Vite + Tailwind CSS với bảng màu Sage dịu mắt & Dark Mode.
   - [x] Dịch vụ lưu trữ IndexedDB bền vững (`idb-keyval`) cho task và file tài liệu/ảnh.
@@ -10,23 +10,11 @@
   - [x] Biểu đồ phân tích trạng thái, ưu tiên và năng suất qua Chart.js.
   - [x] Kho lưu trữ tập trung (Media & Document Vault) với Image Lightbox và download.
   - [x] Nâng cấp Lịch & Timeline theo phong cách Google Calendar (Lưới Tháng 7x5, Tuần 7 cột, Lịch trình, nút Hôm nay).
-  - [x] Khắc phục lỗi trang trắng trên GitHub Pages bằng base relative `./` và đóng gói universal assets.
-  - [x] **[MỚI] Tích hợp Module Quản lý Danh mục & Nhóm công việc:**
-    - Modal quản lý nhóm (`CategoryManagerModal`): Thêm nhóm mới, chọn màu đại diện, xem số lượng công việc theo từng nhóm, xóa nhóm.
-    - Thêm nhanh danh mục inline ngay khi tạo task mới trong `TaskModal`.
-    - Bộ lọc danh mục thông minh trong `TaskListView` với tùy chọn quản lý nhanh.
-    - Lưu trữ danh mục lâu dài vào IndexedDB và tích hợp vào file sao lưu JSON.
-  - [x] Build và deploy trực tiếp lên [ddtam2604work/CheckList_CV_personal](https://github.com/ddtam2604work/CheckList_CV_personal) hoạt động 100%.
-  - [x] **[KHẮC PHỤC TRIỆT ĐỂ LỖI TRANG TRẮNG GITHUB PAGES]:**
-    - Loại bỏ thẻ bundle hardcode trong `index.html` gây lỗi `Could not resolve` trên GitHub Actions.
-    - Tạo script tự động `scripts/sync-build.js` liên kết với lệnh `npm run build`.
-    - Sinh `manifest.json` và bổ sung dynamic bundle loader trong `index.html` cho static hosting từ thư mục gốc `/`.
-    - Đồng bộ bản build production sang `assets/`, `docs/`, và nhánh `gh-pages` (hỗ trợ cả 4 phương thức deploy GitHub Pages).
-  - [x] **[XÂY DỰNG GIAO DIỆN & HỆ THỐNG THÔNG BÁO CHUẨN CHỈNH TOÀN BỘ WEBSITE]:**
-    - **Trung tâm thông báo (Notification Center)** trên Header: Icon chuông, badge đếm số lượng chưa đọc, phân loại thông báo (Tất cả, Hạn chót, Hệ thống), đánh dấu đã đọc, xóa, chuyển đến task.
-    - **Quét hạn chót thông minh**: Tự động phát hiện công việc quá hạn, sắp đến hạn trong vòng 24 giờ và nhắc nhở sao lưu dữ liệu.
-    - **Hệ thống Toast thông báo nổi (Toast Container)**: Thông báo tức thời khi người dùng tạo/sửa/xóa task, đổi trạng thái, quản lý nhóm và sao lưu dữ liệu với giao diện Sage cao cấp, animation và progress bar.
-    - Hỗ trợ Web Notifications API trình duyệt.
-  - [x] **[TỐI ƯU FONT CHỮ PHỔ BIẾN & CỐ ĐỊNH NÚT LƯU/HỦY MODAL]:**
-    - Nâng cấp font chữ toàn website sang bộ đôi chuẩn mực **`Be Vietnam Pro`** & **`Inter`** tối ưu hiển thị tiếng Việt, dễ đọc, êm mắt.
-    - Cấu trúc lại `TaskModal` và các modal theo Flex Column: Header cố định trên đỉnh, phần nội dung form cuộn độc lập ở giữa, các nút **"Hủy bỏ"** và **"Lưu thay đổi / Tạo công việc"** cố định ở đáy modal, luôn hiển thị trong tầm mắt người dùng.
+  - [x] **[MỚI HOÀN THÀNH] Tích hợp Module Lịch Ra Mắt Sản Phẩm & Tự động Thông báo Email trước 2 ngày:**
+    - **Dịch vụ Email thông báo (`emailService.js`)**: Gửi email tự động qua FormSubmit AJAX API tới `duytam262004@gmail.com` với bảng tóm tắt chuyên nghiệp (Tên sản phẩm, thời gian ra mắt, đếm ngược, nền tảng, ghi chú), tích hợp fallback `mailto:` và nút kiểm thử email trực tiếp.
+    - **Cơ chế quét tự động trước 2 ngày (48 giờ)**: Hệ thống chạy background scanner định kỳ quét danh sách sản phẩm, nếu sản phẩm chạm mốc trước 2 ngày và chưa thông báo, hệ thống tự động kích hoạt gửi mail và cập nhật trạng thái `notified2DaysBefore: true` kèm thời điểm gửi.
+    - **Modal thêm/sửa sản phẩm (`ProductModal.jsx`)**: Nhập tên sản phẩm (bắt buộc), ngày & giờ ra mắt (bắt buộc), nền tảng/phân loại, mô tả, email nhận mặc định `duytam262004@gmail.com`, có nút gửi thử email ngay trong modal.
+    - **Giao diện Dashboard (`ProductLaunchView.jsx`)**: Tab "Lịch ra mắt" 🚀 trên ViewSwitcher, đồng hồ đếm ngược thời gian thực (Real-time Countdown Ticker), 4 thẻ KPI thống kê, bộ lọc theo trạng thái (Tất cả, Trong mốc 2 ngày, Đang chuẩn bị, Đã ra mắt), tìm kiếm nhanh.
+    - **Tích hợp Trung tâm thông báo (`NotificationCenter.jsx`)**: Tự động sinh thông báo cảnh báo và icon Rocket khi sản phẩm nằm trong mốc trước 2 ngày hoặc ngày ra mắt, click chuyển thẳng tới sản phẩm.
+    - **Tuyệt đối không có dữ liệu mẫu mặc định**: `loadProducts()` khởi tạo mảng rỗng `[]`, giao diện hiển thị Empty State thanh lịch, có nút nạp dữ liệu mẫu thử nghiệm và nút xóa sạch dữ liệu mẫu để giữ kho dữ liệu 100% sạch sẽ cho người dùng.
+    - Đã kiểm thử qua Browser Subagent & build production bundle thành công 100%.

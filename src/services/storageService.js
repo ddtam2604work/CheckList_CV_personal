@@ -3,6 +3,7 @@ import { get, set } from 'idb-keyval';
 const STORAGE_KEY_TASKS = 'checklist_cv_tasks_v1';
 const STORAGE_KEY_CATEGORIES = 'checklist_cv_categories_v1';
 const STORAGE_KEY_SETTINGS = 'checklist_cv_settings_v1';
+const STORAGE_KEY_PRODUCTS = 'checklist_cv_products_v1';
 
 export const DEFAULT_CATEGORIES = [
   { id: 'cat-1', name: 'Sự nghiệp', color: 'emerald' },
@@ -223,15 +224,83 @@ export async function saveCategories(categories) {
   }
 }
 
+// Dữ liệu mẫu sản phẩm ra mắt CHỈ DÙNG ĐỂ TEST THỬ NGHIỆM khi người dùng chủ động yêu cầu
+export const SAMPLE_PRODUCTS = [
+  {
+    id: 'prod-sample-1',
+    name: 'Khóa học Next.js 15 & Clean Architecture',
+    releaseDate: new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString().slice(0, 16), // Trong mốc 2 ngày (~36h nữa)
+    email: 'duytam262004@gmail.com',
+    platform: 'Website & Khóa học trực tuyến',
+    description: 'Ra mắt chương trình đào tạo chuyên sâu về React Server Components và kiến trúc frontend hiện đại.',
+    status: 'scheduled',
+    notified2DaysBefore: false,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'prod-sample-2',
+    name: 'Nền tảng Quản trị Tuyển dụng CV Builder v2.0',
+    releaseDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // 5 ngày nữa
+    email: 'duytam262004@gmail.com',
+    platform: 'SaaS Web App',
+    description: 'Nâng cấp tính năng xuất hồ sơ PDF vector chuẩn ATS và phân tích điểm CV thông minh.',
+    status: 'scheduled',
+    notified2DaysBefore: false,
+    createdAt: new Date().toISOString()
+  }
+];
+
+export async function loadProducts() {
+  try {
+    const data = await get(STORAGE_KEY_PRODUCTS);
+    if (data && Array.isArray(data)) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('Lỗi đọc products từ IndexedDB, thử localStorage:', err);
+  }
+
+  try {
+    const local = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Lỗi đọc products localStorage:', e);
+  }
+
+  // TUYỆT ĐỐI KHÔNG TỰ NẠP DỮ LIỆU MẪU KHI NGƯỜI DÙNG SỬ DỤNG: MẶC ĐỊNH MẢNG RỖNG
+  return [];
+}
+
+export async function saveProducts(products) {
+  try {
+    await set(STORAGE_KEY_PRODUCTS, products);
+  } catch (err) {
+    console.error('Không thể lưu products vào IndexedDB:', err);
+  }
+
+  try {
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
+  } catch (e) {
+    console.warn('Không thể lưu products vào localStorage:', e);
+  }
+}
+
 export async function exportBackupData() {
   const tasks = await loadTasks();
   const categories = await loadCategories();
+  const products = await loadProducts();
   const backup = {
     app: 'CheckList CV Personal',
     version: '1.0.0',
     exportedAt: new Date().toISOString(),
     tasks: tasks,
-    categories: categories
+    categories: categories,
+    products: products
   };
   return JSON.stringify(backup, null, 2);
 }
@@ -246,7 +315,14 @@ export async function importBackupData(jsonString) {
     if (Array.isArray(parsed.categories)) {
       await saveCategories(parsed.categories);
     }
-    return { tasks: parsed.tasks, categories: parsed.categories || DEFAULT_CATEGORIES };
+    if (Array.isArray(parsed.products)) {
+      await saveProducts(parsed.products);
+    }
+    return { 
+      tasks: parsed.tasks, 
+      categories: parsed.categories || DEFAULT_CATEGORIES,
+      products: parsed.products || []
+    };
   } catch (error) {
     throw new Error('Lỗi khi đọc file sao lưu: ' + error.message);
   }
@@ -255,7 +331,9 @@ export async function importBackupData(jsonString) {
 export async function resetToSampleData() {
   await saveTasks(SAMPLE_TASKS);
   await saveCategories(DEFAULT_CATEGORIES);
-  return { tasks: SAMPLE_TASKS, categories: DEFAULT_CATEGORIES };
+  // Lưu ý: Sản phẩm không tự động nạp mẫu để đảm bảo người dùng có kho dữ liệu sạch
+  await saveProducts([]);
+  return { tasks: SAMPLE_TASKS, categories: DEFAULT_CATEGORIES, products: [] };
 }
 
 // Helper to convert browser File object to persistent attachment record

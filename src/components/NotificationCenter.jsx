@@ -11,7 +11,8 @@ import {
   X,
   ExternalLink,
   ShieldCheck,
-  BellRing
+  BellRing,
+  Rocket
 } from 'lucide-react';
 import { 
   requestBrowserNotificationPermission 
@@ -24,6 +25,7 @@ export default function NotificationCenter({
   onDismissNotification,
   onClearAllNotifications,
   onSelectTask,
+  onSelectProduct,
   onOpenBackupModal,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,7 +65,7 @@ export default function NotificationCenter({
   // Lọc theo tab
   const filteredNotifications = useMemo(() => {
     if (activeTab === 'deadline') {
-      return notifications.filter((n) => n.type === 'overdue' || n.type === 'due_soon');
+      return notifications.filter((n) => n.type === 'overdue' || n.type === 'due_soon' || n.type === 'product_launch');
     }
     if (activeTab === 'system') {
       return notifications.filter((n) => n.type === 'system');
@@ -79,7 +81,10 @@ export default function NotificationCenter({
 
   const handleItemClick = (notification) => {
     onMarkAsRead(notification.id);
-    if (notification.taskId) {
+    if (notification.productId) {
+      if (onSelectProduct) onSelectProduct(notification.productId);
+      setIsOpen(false);
+    } else if (notification.taskId) {
       onSelectTask(notification.taskId);
       setIsOpen(false);
     } else if (notification.type === 'system') {
@@ -235,6 +240,7 @@ export default function NotificationCenter({
                 const isOverdue = n.type === 'overdue';
                 const isDueSoon = n.type === 'due_soon';
                 const isSystem = n.type === 'system';
+                const isProductLaunch = n.type === 'product_launch';
 
                 return (
                   <div
@@ -250,13 +256,16 @@ export default function NotificationCenter({
                       {/* Icon Indicator */}
                       <div
                         className={`shrink-0 p-2 rounded-xl mt-0.5 ${
-                          isOverdue
+                          isProductLaunch
+                            ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300'
+                            : isOverdue
                             ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400'
                             : isDueSoon
                             ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400'
                             : 'bg-sage-100 dark:bg-sage-950/70 text-sage-600 dark:text-sage-400'
                         }`}
                       >
+                        {isProductLaunch && <Rocket className="w-4 h-4" />}
                         {isOverdue && <AlertTriangle className="w-4 h-4" />}
                         {isDueSoon && <Clock className="w-4 h-4" />}
                         {isSystem && <ShieldCheck className="w-4 h-4" />}

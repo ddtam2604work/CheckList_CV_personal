@@ -25,6 +25,7 @@ export default function Header({
   onDismissNotification,
   onClearAllNotifications,
   onSelectTask,
+  onSelectProduct,
 }) {
   return (
     <header className="sticky top-0 z-30 glass-panel border-b border-slate-200/80 dark:border-slate-800 transition-colors">
@@ -111,6 +112,7 @@ export default function Header({
               onDismissNotification={onDismissNotification}
               onClearAllNotifications={onClearAllNotifications}
               onSelectTask={onSelectTask}
+              onSelectProduct={onSelectProduct}
               onOpenBackupModal={onOpenBackupModal}
             />
 

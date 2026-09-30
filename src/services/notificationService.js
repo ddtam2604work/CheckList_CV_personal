@@ -1,7 +1,4 @@
-/**
- * Notification Service for CheckList CV
- * Quản lý thông báo tự động (quá hạn, sắp đến hạn, sao lưu) và trạng thái đọc/xóa
- */
+import { formatDateTime } from '../utils/helpers';
 
 const STORAGE_KEY_READ = 'checklist_notifications_read';
 const STORAGE_KEY_DISMISSED = 'checklist_notifications_dismissed';
@@ -41,9 +38,9 @@ export function saveDismissedNotificationIds(ids) {
 }
 
 /**
- * Sinh danh sách thông báo thông minh từ mảng tasks
+ * Sinh danh sách thông báo thông minh từ mảng tasks và products
  */
-export function generateNotifications(tasks = []) {
+export function generateNotifications(tasks = [], products = []) {
   const now = new Date();
   const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const dismissedIds = new Set(getDismissedNotificationIds());
@@ -102,7 +99,56 @@ export function generateNotifications(tasks = []) {
     }
   });
 
-  // 3. Thông báo nhắc nhở sao lưu định kỳ
+  // 3. Thông báo lịch sản phẩm ra mắt (đặc biệt là mốc trước 2 ngày và ngày ra mắt)
+  products.forEach((product) => {
+    if (!product || !product.releaseDate) return;
+    const releaseDate = new Date(product.releaseDate);
+    if (isNaN(releaseDate.getTime())) return;
+
+    const diffMs = releaseDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    // Mốc trước 2 ngày (0 < diffHours <= 48)
+    if (diffHours > 0 && diffHours <= 48) {
+      const id = `launch-2days-${product.id}-${product.releaseDate.slice(0, 10)}`;
+      if (!dismissedIds.has(id)) {
+        const remainingDays = Math.floor(diffHours / 24);
+        const remainingHours = Math.round(diffHours % 24);
+        const timeText = remainingDays > 0 
+          ? `còn ${remainingDays} ngày ${remainingHours} giờ` 
+          : `chỉ còn ${Math.max(1, Math.round(diffHours))} giờ nữa`;
+
+        notifications.push({
+          id,
+          productId: product.id,
+          type: 'product_launch',
+          priority: 'warning',
+          title: `Sản phẩm ra mắt (${timeText}): ${product.name}`,
+          message: `Sản phẩm "${product.name}" sẽ ra mắt vào ${formatDateTime(product.releaseDate)}. Thông báo qua email đã được lên lịch gửi đến ${product.email || 'duytam262004@gmail.com'}.`,
+          date: releaseDate,
+          isRead: readIds.has(id),
+        });
+      }
+    } 
+    // Ngày ra mắt hoặc vừa ra mắt trong vòng 24 giờ
+    else if (diffHours <= 0 && diffHours >= -24) {
+      const id = `launch-today-${product.id}-${product.releaseDate.slice(0, 10)}`;
+      if (!dismissedIds.has(id)) {
+        notifications.push({
+          id,
+          productId: product.id,
+          type: 'product_launch',
+          priority: 'danger',
+          title: `Đã đến ngày ra mắt: ${product.name}`,
+          message: `Hôm nay là thời điểm phát hành "${product.name}"! Vui lòng kiểm tra các kênh triển khai.`,
+          date: releaseDate,
+          isRead: readIds.has(id),
+        });
+      }
+    }
+  });
+
+  // 4. Thông báo nhắc nhở sao lưu định kỳ
   const lastBackupStr = localStorage.getItem('checklist_last_backup_date');
   const lastBackup = lastBackupStr ? new Date(lastBackupStr) : null;
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

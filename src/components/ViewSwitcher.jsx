@@ -4,14 +4,22 @@ import {
   Kanban, 
   CalendarDays, 
   PieChart, 
-  FolderArchive 
+  FolderArchive,
+  Rocket
 } from 'lucide-react';
 
-export default function ViewSwitcher({ currentView, setCurrentView, attachmentsCount }) {
+export default function ViewSwitcher({ currentView, setCurrentView, attachmentsCount, launchesDueCount }) {
   const tabs = [
     { id: 'list', label: 'Danh sách', icon: CheckSquare },
     { id: 'kanban', label: 'Bảng Kanban', icon: Kanban },
     { id: 'calendar', label: 'Lịch & Timeline', icon: CalendarDays },
+    { 
+      id: 'launches', 
+      label: 'Lịch ra mắt', 
+      icon: Rocket,
+      badge: launchesDueCount,
+      isRocket: true
+    },
     { id: 'analytics', label: 'Biểu đồ phân tích', icon: PieChart },
     { 
       id: 'vault', 
@@ -41,9 +49,11 @@ export default function ViewSwitcher({ currentView, setCurrentView, attachmentsC
             <span>{tab.label}</span>
             {tab.badge !== undefined && tab.badge > 0 && (
               <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                isActive 
-                  ? 'bg-sage-100 text-sage-800 dark:bg-sage-950 dark:text-sage-300' 
-                  : 'bg-slate-300/60 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                tab.isRocket
+                  ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800'
+                  : isActive 
+                    ? 'bg-sage-100 text-sage-800 dark:bg-sage-950 dark:text-sage-300' 
+                    : 'bg-slate-300/60 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
               }`}>
                 {tab.badge}
               </span>
